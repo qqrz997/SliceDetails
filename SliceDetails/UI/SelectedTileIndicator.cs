@@ -15,7 +15,7 @@ namespace SliceDetails.UI
 			// Create a new sliced sprite using the existing bloq texture so we don't have to make another resource
 			if (newRoundRect == null) {
 				Vector4 spriteBorder = new Vector4(54, 54, 54, 54);
-				Texture2D spriteTexture = assetLoader.spr_roundrect.texture;
+				Texture2D spriteTexture = assetLoader.NoteBackground.texture;
 				Rect rect = new Rect(0, 0, spriteTexture.width, spriteTexture.height);
 				newRoundRect = Sprite.Create(spriteTexture, rect, new Vector2(0.5f, 0.5f), 200, 1, SpriteMeshType.FullRect, spriteBorder);
 			}
@@ -36,7 +36,7 @@ namespace SliceDetails.UI
 				tileDot.rectTransform.localScale = Vector3.one;
 				tileDot.rectTransform.localPosition = new Vector3((i % 4) * 3.0f - 4.5f, (i / 4) * 3.0f - 3.0f, 0.0f);
 				tileDot.rectTransform.sizeDelta = new Vector2(6.0f, 6.0f);
-				tileDot.sprite = assetLoader.spr_dot;
+				tileDot.sprite = assetLoader.NoteDot;
 				tileDot.type = Image.Type.Simple;
 				tileDot.color = Color.white;
 				tileDot.material = Utilities.ImageResources.NoGlowMat;

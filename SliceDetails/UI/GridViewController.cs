@@ -91,6 +91,11 @@ namespace SliceDetails.UI
 			_noteCutArrow.gameObject.name = "NoteCutArrow";
 			_noteCutDistance.gameObject.name = "NoteCutDistance";
 
+			_note.sprite = _assetLoader.NoteBackground;
+			_tile.sprite = _assetLoader.GradientBackground;
+			_noteDirArrow.sprite = _assetLoader.NoteArrow;
+			_noteCutArrow.sprite = _assetLoader.CutArrow;
+
 			_sdVersionText.text = $"SliceDetails v{ System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3) }";
 			ReflectionUtil.InvokeMethod<object, TextMeshProUGUI>(_sdVersionText, "Awake"); // For some reason this is necessary
 			_sdVersionText.rectTransform.sizeDelta = new Vector2(40.0f, 10.0f);

@@ -6,14 +6,18 @@ namespace SliceDetails.UI
 {
 	internal class AssetLoader
 	{
-		public Sprite spr_arrow { get; }
-		public Sprite spr_dot { get; }
-		public Sprite spr_roundrect { get; }
+		public Sprite CutArrow { get; }
+		public Sprite GradientBackground { get; }
+		public Sprite NoteBackground { get; }
+		public Sprite NoteArrow { get; }
+		public Sprite NoteDot { get; }
 
 		public AssetLoader() {
-			spr_arrow = LoadSpriteFromResource("SliceDetails.Resources.arrow.png");
-			spr_dot = LoadSpriteFromResource("SliceDetails.Resources.dot.png");
-			spr_roundrect = LoadSpriteFromResource("SliceDetails.Resources.bloq.png");
+			NoteArrow = LoadSpriteFromResource("SliceDetails.Resources.arrow.png");
+			CutArrow = LoadSpriteFromResource("SliceDetails.Resources.cut_arrow.png");
+			NoteDot = LoadSpriteFromResource("SliceDetails.Resources.dot.png");
+			GradientBackground = LoadSpriteFromResource("SliceDetails.Resources.bloq_gradient.png");
+			NoteBackground = LoadSpriteFromResource("SliceDetails.Resources.bloq.png");
 		}
 
 		public static Sprite LoadSpriteFromResource(string path) {
