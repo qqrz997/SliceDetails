@@ -8,6 +8,7 @@ namespace SliceDetails.Installers
 	{
 		public override void InstallBindings() {
 			Container.BindInterfacesAndSelfTo<HoverHintControllerGrabber>().AsSingle();
+			Container.BindInterfacesTo<SettingsViewController>().AsSingle();
 			Container.Bind<GridViewController>().FromNewComponentAsViewController().AsSingle();
 			Container.Bind<UICreator>().AsSingle();
 
