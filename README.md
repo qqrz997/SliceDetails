@@ -12,7 +12,7 @@ Credit to ckosmic, the original author of the mod.
 
 ### For Beat Saber v1.37.1
 
-Place the contents of the unzipped folder from the latest [release](https://github.com/qqrz997/CustomSaberColors/releases/latest) into your Beat Saber installation folder. If you need more information regarding manual installation of mods [this wiki page](https://bsmg.wiki/pc-modding.html#manual-installation) will help. For further help with installing mods, join the [Beat Saber Modding Group](https://discord.gg/beatsabermods) discord server.
+Place the contents of the unzipped folder from the latest [release](https://github.com/qqrz997/SliceDetails/releases/latest) into your Beat Saber installation folder. If you need more information regarding manual installation of mods [this wiki page](https://bsmg.wiki/pc-modding.html#manual-installation) will help. For further help with installing mods, join the [Beat Saber Modding Group](https://discord.gg/beatsabermods) discord server.
 
 Older versions of the mod for older versions of the game are not supported. If you find issues using an older version then I won't be able to help.
 
