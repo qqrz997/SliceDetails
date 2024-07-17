@@ -19,10 +19,7 @@ namespace SliceDetails
 		public void Init(IPA.Logging.Logger logger, Config config, Zenjector zenject) {
 			Settings = config.Generated<SettingsStore>();
 
-			BSMLSettings.instance.AddSettingsMenu("SliceDetails", $"SliceDetails.UI.Views.settingsView.bsml", SettingsViewController.instance);
-
 			zenject.UseLogger(logger);
-
 			zenject.Install<SDAppInstaller>(Location.App);
 			zenject.Install<SDMenuInstaller>(Location.Menu);
 			zenject.Install<SDGameInstaller>(Location.StandardPlayer);

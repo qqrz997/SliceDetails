@@ -85,7 +85,7 @@ namespace SliceDetails.UI
 					break;
 				case OrderedNoteCutDirection.Any:
 					_noteRotation = 0.0f;
-					_directionArrowImage.sprite = assetLoader.spr_dot;
+					_directionArrowImage.sprite = assetLoader.NoteDot;
 					break;
 			}
 

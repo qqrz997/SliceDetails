@@ -12,7 +12,7 @@ namespace SliceDetails.AffinityPatches
 		}
 
 		[AffinityPostfix]
-		[AffinityPatch(typeof(ResultsViewController), nameof(ResultsViewController.DisableResultEnvironmentController))]
+		[AffinityPatch(typeof(ResultsViewController), nameof(ResultsViewController.DidDeactivate))]
 		internal void Postfix(ref ResultsViewController __instance) {
 			if(Plugin.Settings.ShowInCompletionScreen)
 				_uiCreator.RemoveFloatingScreen();
