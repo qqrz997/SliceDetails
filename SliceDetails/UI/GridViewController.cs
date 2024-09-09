@@ -47,8 +47,8 @@ namespace SliceDetails.UI
 		[UIComponent("tile")]
 		private readonly ClickableImage _tile;
 
-		[UIObject("note-modal")]
-		private readonly GameObject _noteModal;
+		[UIComponent("note-modal")]
+		private readonly ModalView _noteModal;
 		[UIObject("note-horizontal")]
 		private readonly GameObject _noteHorizontal;
 		[UIObject("note-grid")]
@@ -129,8 +129,7 @@ namespace SliceDetails.UI
 
 			// Set tile click events and data
 			for (int i = 0; i < _tiles.Count; i++) {
-				_tiles[i].OnClickEvent = _tile.OnClickEvent;
-				_tiles[i].OnClickEvent += SetNotesData;
+				_tiles[i].OnClickEvent += PresentNotesModal;
 				_tiles[i].DefaultColor = _tile.DefaultColor;
 				_tiles[i].HighlightColor = _tile.HighlightColor;
 			}
@@ -191,28 +190,22 @@ namespace SliceDetails.UI
 			}
 		}
 
-		private void SetNotesData(PointerEventData eventData) {
-			int tileIndex = _tiles.IndexOf(eventData.pointerPress.GetComponent<ClickableImage>());
-			_selectedTileIndicator.SetSelectedTile(tileIndex);
-			Tile tile = _sliceProcessor.tiles[tileIndex];
-			for (int i = 0; i < _notes.Count; i++) {
-				float angle = tile.angleAverages[i];
-				float offset = tile.offsetAverages[i];
-				Score score = tile.scoreAverages[i];
-				int count = tile.noteCounts[i];
-
-				_notes[i].SetNoteData(angle, offset, score, count);
-			}
-		}
-
 		[UIAction("#presentNotesModal")]
-		public void PresentModal() {
-			if (_basicUIAudioManager != null)
-				_basicUIAudioManager.HandleButtonClickEvent();
-		}
+		public void PresentNotesModal(PointerEventData eventData) {
+			_basicUIAudioManager?.HandleButtonClickEvent();
+
+            int tileIndex = _tiles.IndexOf(eventData.pointerPress.GetComponent<ClickableImage>());
+            _selectedTileIndicator.SetSelectedTile(tileIndex);
+            Tile tile = _sliceProcessor.tiles[tileIndex];
+            for (int i = 0; i < _notes.Count; i++) {
+                _notes[i].SetNoteData(tile.angleAverages[i], tile.offsetAverages[i], tile.scoreAverages[i], tile.noteCounts[i]);
+            }
+
+			_noteModal.Show(false);
+        }
 
 		public void CloseModal(bool animated) {
-			_noteModal.GetComponent<ModalView>().Hide(animated);
+			_noteModal.Hide(animated);
 		}
 
 		public void UpdateUINotesHoverHintController() {

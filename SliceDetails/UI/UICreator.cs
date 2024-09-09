@@ -32,8 +32,8 @@ namespace SliceDetails.UI
 			_floatingScreen.ShowHandle = Plugin.Settings.ShowHandle;
 			_floatingScreen.HandleSide = FloatingScreen.Side.Bottom;
 			_floatingScreen.HighlightHandle = true;
-			_floatingScreen.handle.transform.localScale = Vector3.one * 5.0f;
-			_floatingScreen.handle.transform.localPosition = new Vector3(0.0f, -25.0f, 0.0f);
+			_floatingScreen.Handle.transform.localScale = Vector3.one * 5.0f;
+			_floatingScreen.Handle.transform.localPosition = new Vector3(0.0f, -25.0f, 0.0f);
 			_floatingScreen.HandleReleased += OnHandleReleased;
 			_floatingScreen.gameObject.name = "SliceDetailsScreen";
 			_floatingScreen.transform.localScale = Vector3.one * 0.03f;

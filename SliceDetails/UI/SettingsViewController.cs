@@ -10,11 +10,11 @@ namespace SliceDetails.UI
 		private readonly string resourceName = $"SliceDetails.UI.Views.settingsView.bsml";
 
         public void Initialize() {
-            BSMLSettings.instance.AddSettingsMenu("SliceDetails", resourceName, this);
+            BSMLSettings.Instance.AddSettingsMenu("SliceDetails", resourceName, this);
         }
 
 		public void Dispose() {
-			BSMLSettings.instance.RemoveSettingsMenu(this);
+			BSMLSettings.Instance.RemoveSettingsMenu(this);
 		}
 
 		[UIValue("show-pause")]
