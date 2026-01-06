@@ -1,21 +1,21 @@
 ﻿using HMUI;
 using Zenject;
 
-namespace SliceDetails.UI
+namespace SliceDetails.UI;
+
+internal class HoverHintControllerGrabber : IInitializable
 {
-	internal class HoverHintControllerGrabber : IInitializable
+	private readonly HoverHintControllerHandler hoverHintControllerHandler;
+	private readonly HoverHintController hoverHintController;
+
+	public HoverHintControllerGrabber(HoverHintControllerHandler hoverHintControllerHandler, HoverHintController hoverHintController) 
 	{
-		private readonly HoverHintControllerHandler _hoverHintControllerHandler;
+		this.hoverHintControllerHandler = hoverHintControllerHandler;
+		this.hoverHintController = hoverHintController;
+	}
 
-		private HoverHintController _hoverHintController;
-
-		public HoverHintControllerGrabber(HoverHintControllerHandler hoverHintControllerHandler, HoverHintController hoverHintController) {
-			_hoverHintControllerHandler = hoverHintControllerHandler;
-			_hoverHintController = hoverHintController;
-		}
-
-		public void Initialize() {
-			_hoverHintControllerHandler.SetOriginalHoverHintController(_hoverHintController);
-		}
+	public void Initialize()
+	{
+		hoverHintControllerHandler.SetOriginalHoverHintController(hoverHintController);
 	}
 }

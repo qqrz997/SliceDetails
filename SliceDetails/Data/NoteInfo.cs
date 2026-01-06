@@ -1,33 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿namespace SliceDetails.Data;
 
-namespace SliceDetails.Data
+internal class NoteInfo
 {
-	internal class NoteInfo
+	public NoteData NoteData { get; }
+	public float CutAngle { get; }
+	public float CutOffset { get; }
+	public int NoteIndex { get; }
+	public Score Score { get; set; } = Score.Zero;
+
+	public NoteInfo(NoteData noteData, float cutAngle, float cutOffset, int noteIndex)
 	{
-		public NoteData noteData;
-		public NoteCutInfo cutInfo;
-		public float cutAngle;
-		public float cutOffset;
-		public Score score;
-		public Vector2 noteGridPosition;
-		public int noteIndex;
-
-		public NoteInfo() { 
-			
-		}
-
-		public NoteInfo(NoteData noteData, NoteCutInfo cutInfo, float cutAngle, float cutOffset, Vector2 noteGridPosition, int noteIndex) {
-			this.noteData = noteData;
-			this.cutInfo = cutInfo;
-			this.cutAngle = cutAngle;
-			this.cutOffset = cutOffset;
-			this.noteGridPosition = noteGridPosition;
-			this.noteIndex = noteIndex;
-		}
+		NoteData = noteData;
+		CutAngle = cutAngle;
+		CutOffset = cutOffset;
+		NoteIndex = noteIndex;
 	}
 }

@@ -1,28 +1,26 @@
 ﻿using IPA;
 using IPA.Config;
 using IPA.Config.Stores;
+using IPA.Logging;
 using SiraUtil.Zenject;
 using SliceDetails.Installers;
 using SliceDetails.Settings;
-using BeatSaberMarkupLanguage.Settings;
-using SliceDetails.UI;
 
-namespace SliceDetails
+namespace SliceDetails;
+
+[Plugin(RuntimeOptions.DynamicInit), NoEnableDisable]
+public class Plugin
 {
+	internal static SettingsStore Settings { get; private set; } = null!;
 
-	[Plugin(RuntimeOptions.DynamicInit), NoEnableDisable]
-	public class Plugin
+	[Init]
+	public Plugin(Logger logger, Config config, Zenjector zenjector) 
 	{
-		internal static SettingsStore Settings { get; private set; }
+		Settings = config.Generated<SettingsStore>();
 
-		[Init]
-		public void Init(IPA.Logging.Logger logger, Config config, Zenjector zenject) {
-			Settings = config.Generated<SettingsStore>();
-
-			zenject.UseLogger(logger);
-			zenject.Install<SDAppInstaller>(Location.App);
-			zenject.Install<SDMenuInstaller>(Location.Menu);
-			zenject.Install<SDGameInstaller>(Location.StandardPlayer);
-		}
+		zenjector.UseLogger(logger);
+		zenjector.Install<SDAppInstaller>(Location.App);
+		zenjector.Install<SDMenuInstaller>(Location.Menu);
+		zenjector.Install<SDGameInstaller>(Location.StandardPlayer);
 	}
 }

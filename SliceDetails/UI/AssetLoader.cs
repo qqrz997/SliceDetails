@@ -1,39 +1,32 @@
-﻿using System.IO;
-using System.Reflection;
+﻿using System;
+using System.IO;
+using SliceDetails.Utils;
 using UnityEngine;
 
-namespace SliceDetails.UI
+namespace SliceDetails.UI;
+
+internal class AssetLoader
 {
-	internal class AssetLoader
+	private const string ResourcesPath = "SliceDetails.Resources.";
+	public Sprite CutArrow { get; }
+	public Sprite GradientBackground { get; }
+	public Sprite NoteBackground { get; }
+	public Sprite NoteArrow { get; }
+	public Sprite NoteDot { get; }
+
+	public AssetLoader() 
 	{
-		public Sprite CutArrow { get; }
-		public Sprite GradientBackground { get; }
-		public Sprite NoteBackground { get; }
-		public Sprite NoteArrow { get; }
-		public Sprite NoteDot { get; }
+		NoteArrow = LoadSpriteResource("arrow.png");
+		CutArrow = LoadSpriteResource("cut_arrow.png");
+		NoteDot = LoadSpriteResource("dot.png");
+		GradientBackground = LoadSpriteResource("bloq_gradient.png");
+		NoteBackground = LoadSpriteResource("bloq.png");
+	}
 
-		public AssetLoader() {
-			NoteArrow = LoadSpriteFromResource("SliceDetails.Resources.arrow.png");
-			CutArrow = LoadSpriteFromResource("SliceDetails.Resources.cut_arrow.png");
-			NoteDot = LoadSpriteFromResource("SliceDetails.Resources.dot.png");
-			GradientBackground = LoadSpriteFromResource("SliceDetails.Resources.bloq_gradient.png");
-			NoteBackground = LoadSpriteFromResource("SliceDetails.Resources.bloq.png");
-		}
-
-		public static Sprite LoadSpriteFromResource(string path) {
-			Assembly assembly = Assembly.GetCallingAssembly();
-			using (Stream stream = assembly.GetManifestResourceStream(path)) {
-				if (stream != null) {
-					byte[] data = new byte[stream.Length];
-					stream.Read(data, 0, (int)stream.Length);
-					Texture2D tex = new Texture2D(2, 2);
-					if (tex.LoadImage(data)) {
-						Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0, 0), 100);
-						return sprite;
-					}
-				}
-			}
-			return null;
-		}
+	private static Sprite LoadSpriteResource(string resourceName)
+	{
+		var imageData = ImageLoading.GetResource(ResourcesPath + resourceName);
+		return new Texture2D(2, 2).ToSprite(imageData, Path.GetFileNameWithoutExtension(resourceName))
+		       ?? throw new InvalidOperationException("Failed to create a sprite from an internal image");
 	}
 }

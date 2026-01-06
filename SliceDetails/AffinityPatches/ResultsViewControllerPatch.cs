@@ -1,21 +1,21 @@
 ﻿using SiraUtil.Affinity;
 using SliceDetails.UI;
 
-namespace SliceDetails.AffinityPatches
+namespace SliceDetails.AffinityPatches;
+
+internal class ResultsViewControllerPatch : IAffinity
 {
-	internal class ResultsViewControllerPatch : IAffinity
+	private readonly UICreator uiCreator;
+
+	public ResultsViewControllerPatch(UICreator uiCreator)
 	{
-		private readonly UICreator _uiCreator;
+		this.uiCreator = uiCreator;
+	}
 
-		public ResultsViewControllerPatch(UICreator uiCreator) {
-			_uiCreator = uiCreator;
-		}
-
-		[AffinityPostfix]
-		[AffinityPatch(typeof(ResultsViewController), nameof(ResultsViewController.DidDeactivate))]
-		internal void Postfix(ref ResultsViewController __instance) {
-			if(Plugin.Settings.ShowInCompletionScreen)
-				_uiCreator.RemoveFloatingScreen();
-		}
+	[AffinityPostfix]
+	[AffinityPatch(typeof(ResultsViewController), nameof(ResultsViewController.DidDeactivate))]
+	internal void Postfix() 
+	{
+		if (Plugin.Settings.ShowInCompletionScreen) uiCreator.RemoveFloatingScreen();
 	}
 }

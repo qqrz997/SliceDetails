@@ -1,30 +1,26 @@
-﻿using HMUI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using HMUI;
+using Object = UnityEngine.Object;
 
-namespace SliceDetails.UI
+namespace SliceDetails.UI;
+
+internal class HoverHintControllerHandler
 {
-	internal class HoverHintControllerHandler
+	public HoverHintController HoverHintController =>
+		hoverHintControllerCopy != null ? hoverHintControllerCopy 
+		: hoverHintControllerOriginal != null ?  hoverHintControllerOriginal
+		: throw new NullReferenceException();
+
+	private HoverHintController? hoverHintControllerOriginal;
+	private HoverHintController? hoverHintControllerCopy;
+
+	internal void SetOriginalHoverHintController(HoverHintController original) 
 	{
-		public HoverHintController hoverHintController {
-			get {
-				return (_hoverHintControllerCopy == null) ? _hoverHintControllerOriginal : _hoverHintControllerCopy;
-			}
-		}
+		hoverHintControllerOriginal = original;
+	}
 
-		private HoverHintController _hoverHintControllerOriginal;
-		private HoverHintController _hoverHintControllerCopy;
-
-		internal void SetOriginalHoverHintController(HoverHintController original) {
-			_hoverHintControllerOriginal = original;
-		}
-
-		internal void CloneHoverHintController() {
-			_hoverHintControllerCopy = UnityEngine.Object.Instantiate(_hoverHintControllerOriginal);
-			_hoverHintControllerCopy.transform.SetParent(null);
-		}
+	internal void CloneHoverHintController() 
+	{
+		hoverHintControllerCopy = Object.Instantiate(hoverHintControllerOriginal, null, true);
 	}
 }

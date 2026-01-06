@@ -1,225 +1,209 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using BeatSaberMarkupLanguage.Attributes;
 using BeatSaberMarkupLanguage.Components;
 using BeatSaberMarkupLanguage.ViewControllers;
 using HMUI;
 using IPA.Utilities;
-using SiraUtil.Logging;
+using SliceDetails.Data;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using Zenject;
-using SliceDetails.Data;
 using UnityEngine.SceneManagement;
+using Zenject;
 
-namespace SliceDetails.UI
+namespace SliceDetails.UI;
+
+[HotReload(RelativePathToLayout = @"Views\gridView.bsml")]
+[ViewDefinition("SliceDetails.UI.Views.gridView.bsml")]
+internal class GridViewController : BSMLAutomaticViewController
 {
-	public enum OrderedNoteCutDirection
+	[Inject] private readonly AssetLoader assetLoader = null!;
+	[Inject] private readonly PlayerDataModel playerDataModel = null!;
+	[Inject] private readonly HoverHintControllerHandler hoverHintControllerHandler = null!;
+	[Inject] private readonly SliceProcessor sliceProcessor = null!;
+	[Inject] private readonly DiContainer diContainer = null!;
+
+	[UIObject("tile-grid")] private readonly GameObject tileGrid = null!;
+	[UIObject("tile-row")] private readonly GameObject tileRow = null!;
+	[UIComponent("tile")] private readonly ClickableImage tile = null!;
+
+	[UIComponent("note-modal")] private readonly ModalView noteModal = null!;
+	[UIObject("note-horizontal")] private readonly GameObject noteHorizontal = null!;
+	[UIObject("note-grid")] private readonly GameObject noteGrid = null!;
+	[UIObject("note-row")] private readonly GameObject noteRow = null!;
+
+	[UIComponent("note")] private readonly ImageView note = null!;
+	[UIComponent("note-dir-arrow")] private readonly ImageView noteDirArrow = null!;
+	[UIComponent("note-cut-arrow")] private readonly ImageView noteCutArrow = null!;
+	[UIComponent("note-cut-distance")] private readonly ImageView noteCutDistance = null!;
+	[UIComponent("sd-version")] private readonly TextMeshProUGUI sdVersionText = null!;
+	[UIComponent("reset-button")] private readonly RectTransform resetButtonTransform = null!;
+
+	private readonly List<ClickableImage> tiles = [];
+	private readonly List<NoteUI> notes = [];
+	private SelectedTileIndicator? selectedTileIndicator;
+	private BasicUIAudioManager? basicUIAudioManager;
+
+	[UIAction("#post-parse")]
+	public void PostParse() 
 	{
-		UpLeft = 0,
-		Up = 1,
-		UpRight = 2,
-		Left = 3,
-		Any = 4,
-		Right = 5,
-		DownLeft = 6,
-		Down = 7,
-		DownRight = 8,
-		None = 9
+		noteDirArrow.gameObject.name = "NoteDirArrow";
+		noteCutArrow.gameObject.name = "NoteCutArrow";
+		noteCutDistance.gameObject.name = "NoteCutDistance";
+
+		note.sprite = assetLoader.NoteBackground;
+		tile.sprite = assetLoader.GradientBackground;
+		noteDirArrow.sprite = assetLoader.NoteArrow;
+		noteCutArrow.sprite = assetLoader.CutArrow;
+
+		sdVersionText.text = $"SliceDetails v{ System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3) }";
+		sdVersionText.InvokeMethod<object, TextMeshProUGUI>("Awake"); // For some reason this is necessary
+		sdVersionText.rectTransform.sizeDelta = new(40.0f, 10.0f);
+		sdVersionText.transform.localPosition = new(0.0f, -17.0f, 0.0f);
+
+		if (SceneManager.GetActiveScene().name == "MainMenu") 
+		{
+			Destroy(resetButtonTransform.gameObject);
+		} 
+		else 
+		{ 
+			resetButtonTransform.sizeDelta = new(8.0f, 4.0f);
+			resetButtonTransform.localPosition = new(-15.0f, -17.0f, 0.0f);
+			resetButtonTransform.GetComponentInChildren<CurvedTextMeshPro>().fontStyle = FontStyles.Normal;
+			foreach (var imageView in resetButtonTransform.GetComponentsInChildren<ImageView>()) 
+			{
+				imageView.SetField("_skew", 0.0f);
+				imageView.transform.localPosition = Vector3.zero;
+			}
+		}
+
+		// Create first row of tiles
+		for (int i = 0; i < 4; i++) 
+		{
+			ClickableImage tileInstance = Instantiate(tile.gameObject, tileRow.transform).GetComponent<ClickableImage>();
+			tiles.Add(tileInstance);
+		}
+
+		// Create other 2 rows of tiles
+		for (int i = 0; i < 2; i++) 
+		{
+			GameObject tileRowInstance = Instantiate(tileRow, tileGrid.transform);
+			tileRowInstance.transform.SetAsFirstSibling();
+			tiles.AddRange(tileRowInstance.GetComponentsInChildren<ClickableImage>());
+		}
+
+		// Set tile click events and data
+		for (int i = 0; i < tiles.Count; i++) 
+		{
+			tiles[i].OnClickEvent += PresentNotesModal;
+			tiles[i].DefaultColor = tile.DefaultColor;
+			tiles[i].HighlightColor = tile.HighlightColor;
+		}
+
+		var noteParent = noteRow.transform;
+		var rowParent = noteGrid.transform;
+		var currentHoverHintController = hoverHintControllerHandler.HoverHintController;
+		for (int i = 0; i < 18; i++)
+		{
+			if (i % 9 == 0) 
+			{
+				rowParent = Instantiate(noteGrid, noteHorizontal.transform).transform;
+			}
+			if (i % 3 == 0)
+			{
+				noteParent = Instantiate(noteRow, rowParent).transform;
+			}
+
+			var cutDirection = (OrderedNoteCutDirection)(i % 9);
+			var colorScheme = playerDataModel.playerData.colorSchemesSettings.GetSelectedColorScheme();
+			var color = i >= 9 ? colorScheme.saberBColor : colorScheme.saberAColor;
+			var uiNote = Instantiate(note.gameObject, noteParent).AddComponent<NoteUI>();
+			uiNote.Initialize(cutDirection, color, assetLoader);
+			uiNote.SetHoverHintController(currentHoverHintController);
+
+			notes.Add(uiNote);
+		}
+
+		basicUIAudioManager = Resources.FindObjectsOfTypeAll<BasicUIAudioManager>()
+			.First(x => x.isActiveAndEnabled);
+			
+		selectedTileIndicator = new GameObject("SelectedTileIndicator").AddComponent<SelectedTileIndicator>();
+		selectedTileIndicator.Initialize(assetLoader);
+		selectedTileIndicator.transform.SetParent(noteModal.transform, false);
+		selectedTileIndicator.transform.localPosition = new(0f, 30f, 0f);
+
+		DestroyImmediate(note.gameObject);
+		DestroyImmediate(noteRow);
+		DestroyImmediate(noteGrid);
+		DestroyImmediate(tile.gameObject);
 	}
 
-	[HotReload(RelativePathToLayout = @"Views\gridView.bsml")]
-	[ViewDefinition("SliceDetails.UI.Views.gridView.bsml")]
-	internal class GridViewController : BSMLAutomaticViewController {
+	public void SetTileScores() 
+	{
+		for (int i = 0; i < tiles.Count; i++) 
+		{
+			var formattableTexts = tiles[i].transform.GetComponentsInChildren<FormattableText>(true);
 
-		private SiraLog _siraLog;
-		private AssetLoader _assetLoader;
-		private HoverHintControllerHandler _hoverHintControllerHandler;
-		private SliceProcessor _sliceProcessor;
-		private DiContainer _diContainer;
-
-		[UIObject("tile-grid")]
-		private readonly GameObject _tileGrid;
-		[UIObject("tile-row")]
-		private readonly GameObject _tileRow;
-		[UIComponent("tile")]
-		private readonly ClickableImage _tile;
-
-		[UIComponent("note-modal")]
-		private readonly ModalView _noteModal;
-		[UIObject("note-horizontal")]
-		private readonly GameObject _noteHorizontal;
-		[UIObject("note-grid")]
-		private GameObject _noteGrid;
-		[UIObject("note-row")]
-		private GameObject _noteRow;
-
-		[UIComponent("note")]
-		private readonly ImageView _note;
-		[UIComponent("note-dir-arrow")]
-		private readonly ImageView _noteDirArrow;
-		[UIComponent("note-cut-arrow")]
-		private readonly ImageView _noteCutArrow;
-		[UIComponent("note-cut-distance")]
-		private readonly ImageView _noteCutDistance;
-		[UIComponent("sd-version")]
-		private readonly TextMeshProUGUI _sdVersionText;
-		[UIComponent("reset-button")]
-		private readonly RectTransform _resetButtonTransform;
-
-		private List<ClickableImage> _tiles = new List<ClickableImage>();
-		private List<NoteUI> _notes = new List<NoteUI>();
-		private SelectedTileIndicator _selectedTileIndicator;
-		private BasicUIAudioManager _basicUIAudioManager;
-
-
-		[Inject]
-		internal void Construct(SiraLog siraLog, AssetLoader assetLoader, HoverHintControllerHandler hoverHintControllerHandler, SliceProcessor sliceProcessor, DiContainer diContainer) {
-			_siraLog = siraLog;
-			_assetLoader = assetLoader;
-			_hoverHintControllerHandler = hoverHintControllerHandler;
-			_sliceProcessor = sliceProcessor;
-			_diContainer = diContainer;
-			_siraLog.Debug("GridViewController Constructed");
-		}
-
-		[UIAction("#post-parse")]
-		public void PostParse() {
-			_noteDirArrow.gameObject.name = "NoteDirArrow";
-			_noteCutArrow.gameObject.name = "NoteCutArrow";
-			_noteCutDistance.gameObject.name = "NoteCutDistance";
-
-			_note.sprite = _assetLoader.NoteBackground;
-			_tile.sprite = _assetLoader.GradientBackground;
-			_noteDirArrow.sprite = _assetLoader.NoteArrow;
-			_noteCutArrow.sprite = _assetLoader.CutArrow;
-
-			_sdVersionText.text = $"SliceDetails v{ System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3) }";
-			ReflectionUtil.InvokeMethod<object, TextMeshProUGUI>(_sdVersionText, "Awake"); // For some reason this is necessary
-			_sdVersionText.rectTransform.sizeDelta = new Vector2(40.0f, 10.0f);
-			_sdVersionText.transform.localPosition = new Vector3(0.0f, -17.0f, 0.0f);
-
-			if (SceneManager.GetActiveScene().name == "MainMenu") {
-				Destroy(_resetButtonTransform.gameObject);
-			} else { 
-				_resetButtonTransform.sizeDelta = new Vector2(8.0f, 4.0f);
-				_resetButtonTransform.localPosition = new Vector3(-15.0f, -17.0f, 0.0f);
-				_resetButtonTransform.GetComponentInChildren<CurvedTextMeshPro>().fontStyle = FontStyles.Normal;
-				foreach (ImageView iv in _resetButtonTransform.GetComponentsInChildren<ImageView>()) {
-					iv.SetField("_skew", 0.0f);
-					iv.transform.localPosition = Vector3.zero;
-				}
+			if(Plugin.Settings.ShowSliceCounts) 
+			{
+				formattableTexts[0].transform.localPosition = new(0.0f, 0.75f, 0.0f);
+				formattableTexts[1].transform.localPosition = new(0.0f, -1.5f, 0.0f);
+				formattableTexts[1].gameObject.SetActive(true);
+			} 
+			else 
+			{
+				formattableTexts[1].gameObject.SetActive(false);
 			}
 
-			_tiles = new List<ClickableImage>();
-			// Create first row of tiles
-			for (int i = 0; i < 4; i++) {
-				ClickableImage tileInstance = Instantiate(_tile.gameObject, _tileRow.transform).GetComponent<ClickableImage>();
-				_tiles.Add(tileInstance);
+			if (sliceProcessor.Tiles[i].AtLeastOneNote) 
+			{ 
+				formattableTexts[0].text = $"{sliceProcessor.Tiles[i].ScoreAverage:0.00}";
+				formattableTexts[1].text = sliceProcessor.Tiles[i].NoteCount.ToString();
 			}
-
-			// Create other 2 rows of tiles
-			for (int i = 0; i < 2; i++) {
-				GameObject tileRowInstance = Instantiate(_tileRow, _tileGrid.transform);
-				tileRowInstance.transform.SetAsFirstSibling();
-				_tiles.AddRange(tileRowInstance.GetComponentsInChildren<ClickableImage>());
-			}
-
-			// Set tile click events and data
-			for (int i = 0; i < _tiles.Count; i++) {
-				_tiles[i].OnClickEvent += PresentNotesModal;
-				_tiles[i].DefaultColor = _tile.DefaultColor;
-				_tiles[i].HighlightColor = _tile.HighlightColor;
-			}
-
-			Transform noteParent = _noteRow.transform;
-			Transform rowParent = _noteGrid.transform;
-			_notes = new List<NoteUI>();
-			HoverHintController currentHoverHintController = _hoverHintControllerHandler.hoverHintController;
-			for (int i = 0; i < 18; i++) {
-				if (i % 9 == 0) {
-					rowParent = Instantiate(_noteGrid, _noteHorizontal.transform).transform;
-				}
-				if (i % 3 == 0) {
-					noteParent = Instantiate(_noteRow, rowParent).transform;
-				}
-
-				ColorType colorType = (ColorType)(i >= 9 ? 1 : 0);
-				OrderedNoteCutDirection cutDirection = (OrderedNoteCutDirection)(i % 9);
-				NoteUI uiNote = Instantiate(_note.gameObject, noteParent).AddComponent<NoteUI>();
-				uiNote.Initialize(cutDirection, colorType, _assetLoader);
-				uiNote.SetHoverHintController(currentHoverHintController);
-
-				_notes.Add(uiNote);
-			}
-
-			_selectedTileIndicator = new GameObject("SelectedTileIndicator").AddComponent<SelectedTileIndicator>();
-			_selectedTileIndicator.Initialize(_assetLoader);
-			_selectedTileIndicator.transform.SetParent(_noteModal.transform, false);
-			_selectedTileIndicator.transform.localPosition = new Vector3(0f, 30f, 0f);
-
-			_basicUIAudioManager = Resources.FindObjectsOfTypeAll<BasicUIAudioManager>().First(x => x.GetComponent<AudioSource>().enabled && x.isActiveAndEnabled);
-
-			DestroyImmediate(_note.gameObject);
-			DestroyImmediate(_noteRow);
-			DestroyImmediate(_noteGrid);
-			DestroyImmediate(_tile.gameObject);
-		}
-
-		public void SetTileScores() {
-			for (int i = 0; i < _tiles.Count; i++) {
-				FormattableText[] texts = _tiles[i].transform.GetComponentsInChildren<FormattableText>(true);
-
-				if(Plugin.Settings.ShowSliceCounts) {
-					texts[0].transform.localPosition = new Vector3(0.0f, 0.75f, 0.0f);
-					texts[1].transform.localPosition = new Vector3(0.0f, -1.5f, 0.0f);
-					texts[1].gameObject.SetActive(true);
-				} else {
-					texts[1].gameObject.SetActive(false);
-				}
-
-				if (_sliceProcessor.tiles[i].atLeastOneNote) { 
-					texts[0].text = String.Format("{0:0.00}", _sliceProcessor.tiles[i].scoreAverage);
-					texts[1].text = _sliceProcessor.tiles[i].noteCount.ToString();
-				} else { 
-					texts[0].text = "";
-					texts[1].text = "";
-				}
+			else 
+			{ 
+				formattableTexts[0].text = "";
+				formattableTexts[1].text = "";
 			}
 		}
+	}
 
-		[UIAction("#presentNotesModal")]
-		public void PresentNotesModal(PointerEventData eventData) {
-			_basicUIAudioManager?.HandleButtonClickEvent();
+	[UIAction("#presentNotesModal")]
+	public void PresentNotesModal(PointerEventData eventData) 
+	{
+		basicUIAudioManager?.HandleButtonClickEvent();
 
-            int tileIndex = _tiles.IndexOf(eventData.pointerPress.GetComponent<ClickableImage>());
-            _selectedTileIndicator.SetSelectedTile(tileIndex);
-            Tile tile = _sliceProcessor.tiles[tileIndex];
-            for (int i = 0; i < _notes.Count; i++) {
-                _notes[i].SetNoteData(tile.angleAverages[i], tile.offsetAverages[i], tile.scoreAverages[i], tile.noteCounts[i]);
-            }
-
-			_noteModal.Show(false);
-        }
-
-		public void CloseModal(bool animated) {
-			_noteModal.Hide(animated);
+		int tileIndex = tiles.IndexOf(eventData.pointerPress.GetComponent<ClickableImage>());
+		selectedTileIndicator?.SetSelectedTile(tileIndex);
+		var tile = sliceProcessor.Tiles[tileIndex];
+		for (int i = 0; i < notes.Count; i++) 
+		{
+			notes[i].SetNoteData(tile.AngleAverages[i], tile.OffsetAverages[i], tile.ScoreAverages[i], tile.NoteCounts[i]);
 		}
 
-		public void UpdateUINotesHoverHintController() {
-			HoverHintController currentHoverHintController = _hoverHintControllerHandler.hoverHintController;
-			for (int i = 0; i < _notes.Count; i++) {
-				_notes[i].SetHoverHintController(currentHoverHintController);
-			}
-		}
+		noteModal.Show(false);
+	}
 
-		[UIAction("resetRecorder")]
-		public void ResetRecorder() {
-			SliceRecorder sliceRecorder = _diContainer.TryResolve<SliceRecorder>();
-			sliceRecorder?.ClearSlices();
-			SetTileScores();
+	public void CloseModal(bool animated) 
+	{
+		noteModal.Hide(animated);
+	}
+
+	public void UpdateUINotesHoverHintController()
+	{
+		var currentHoverHintController = hoverHintControllerHandler.HoverHintController;
+		for (int i = 0; i < notes.Count; i++)
+		{
+			notes[i].SetHoverHintController(currentHoverHintController);
 		}
+	}
+
+	[UIAction("resetRecorder")]
+	public void ResetRecorder() 
+	{
+		var sliceRecorder = diContainer.TryResolve<SliceRecorder>();
+		sliceRecorder?.ClearSlices();
+		SetTileScores();
 	}
 }

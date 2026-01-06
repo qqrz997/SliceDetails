@@ -2,19 +2,19 @@
 using SliceDetails.UI;
 using Zenject;
 
-namespace SliceDetails.Installers
-{
-	internal class SDMenuInstaller : Installer<SDMenuInstaller>
-	{
-		public override void InstallBindings() {
-			Container.BindInterfacesAndSelfTo<HoverHintControllerGrabber>().AsSingle();
-			Container.BindInterfacesTo<SettingsViewController>().AsSingle();
-			Container.Bind<GridViewController>().FromNewComponentAsViewController().AsSingle();
-			Container.Bind<UICreator>().AsSingle();
+namespace SliceDetails.Installers;
 
-			Container.BindInterfacesTo<ResultsViewControllerPatch>().AsSingle();
-			Container.BindInterfacesTo<PartyFreePlayFlowCoordinatorPatch>().AsSingle();
-			Container.BindInterfacesTo<SoloFreePlayFlowCoordinatorPatch>().AsSingle();
-		}
+internal class SDMenuInstaller : Installer<SDMenuInstaller>
+{
+	public override void InstallBindings()
+	{
+		Container.BindInterfacesAndSelfTo<HoverHintControllerGrabber>().AsSingle();
+		Container.BindInterfacesTo<SettingsViewController>().AsSingle();
+		Container.Bind<GridViewController>().FromNewComponentAsViewController().AsSingle();
+		Container.Bind<UICreator>().AsSingle();
+
+		Container.BindInterfacesTo<ResultsViewControllerPatch>().AsSingle();
+		Container.BindInterfacesTo<PartyFreePlayFlowCoordinatorPatch>().AsSingle();
+		Container.BindInterfacesTo<SoloFreePlayFlowCoordinatorPatch>().AsSingle();
 	}
 }

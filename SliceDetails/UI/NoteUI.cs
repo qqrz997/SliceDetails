@@ -1,136 +1,129 @@
 ﻿using HMUI;
 using IPA.Utilities;
-using SliceDetails.Utils;
 using SliceDetails.Data;
-using System;
-using UnityEngine;
 using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
 
-namespace SliceDetails.UI
+namespace SliceDetails.UI;
+
+internal class NoteUI : MonoBehaviour
 {
+	// Set in initialize
+	private ImageView directionArrowImage = null!;
+	private Transform cutGroup = null!;
+	private ImageView cutArrowImage = null!;
+	private ImageView cutDistanceImage = null!;
+	private ImageView backgroundImage = null!;
 
-	internal class NoteUI : MonoBehaviour
+	private HoverHint noteHoverHint = null!;
+	private HoverHintController hoverHintController = null!;
+	private TextMeshProUGUI hoverPanelTmpro = null!;
+	private Color noteColor;
+
+	private float noteRotation;
+
+	public void Initialize(OrderedNoteCutDirection cutDirection, Color color, AssetLoader assetLoader) {
+		transform.localScale = Vector3.one * 0.9f;
+
+		backgroundImage = GetComponent<ImageView>();
+		directionArrowImage = transform.Find("NoteDirArrow").GetComponent<ImageView>();
+		cutArrowImage = transform.Find("NoteCutArrow").GetComponent<ImageView>();
+		cutDistanceImage = transform.Find("NoteCutDistance").GetComponent<ImageView>();
+
+		cutGroup = new GameObject("NoteCutGroup").transform;
+		cutGroup.SetParent(backgroundImage.transform);
+		cutGroup.localPosition = Vector3.zero;
+		cutGroup.localScale = Vector3.one;
+		cutGroup.localRotation = Quaternion.identity;
+		cutArrowImage.transform.SetParent(cutGroup);
+		cutDistanceImage.transform.SetParent(cutGroup);
+
+		noteColor = color;
+
+		backgroundImage.color = noteColor;
+		cutDistanceImage.color = new(0.0f, 1.0f, 0.0f, 0.75f);
+
+		var square = new Texture2D(2, 2);
+		square.filterMode = FilterMode.Point;
+		square.Apply();
+		cutDistanceImage.sprite = Sprite.Create(square, new(0, 0, square.width, square.height), new(0, 0), 100);
+
+		noteHoverHint = backgroundImage.gameObject.AddComponent<HoverHint>();
+		noteHoverHint.text = "";
+		
+		if (cutDirection is OrderedNoteCutDirection.Any)
+		{
+			directionArrowImage.sprite = assetLoader.NoteDot;
+		}
+
+		noteRotation = cutDirection switch
+		{
+			OrderedNoteCutDirection.Down => 0.0f,
+			OrderedNoteCutDirection.Up => 180.0f,
+			OrderedNoteCutDirection.Left => 270.0f,
+			OrderedNoteCutDirection.Right => 90.0f,
+			OrderedNoteCutDirection.DownLeft => 315.0f,
+			OrderedNoteCutDirection.DownRight => 45.0f,
+			OrderedNoteCutDirection.UpLeft => 225.0f,
+			OrderedNoteCutDirection.UpRight => 135.0f,
+			OrderedNoteCutDirection.Any => 0.0f,
+			_ => noteRotation
+		};
+
+		transform.localRotation = Quaternion.Euler(new(0f, 0f, noteRotation));
+	}
+
+	public void SetHoverHintController(HoverHintController hoverHintController) 
 	{
-		private ImageView _directionArrowImage;
-		private Transform _cutGroup;
-		private ImageView _cutArrowImage;
-		private ImageView _cutDistanceImage;
-		private ImageView _backgroundImage;
+		this.hoverHintController = hoverHintController;
+		var hoverHintPanel = this.hoverHintController.GetField<HoverHintPanel, HoverHintController>("_hoverHintPanel");
+		// Skew cringe skew cringe
+		hoverHintPanel.GetComponent<ImageView>().SetField("_skew", 0.0f);
+		hoverPanelTmpro = hoverHintPanel.GetComponentInChildren<TextMeshProUGUI>();
+		hoverPanelTmpro.fontStyle = FontStyles.Normal;
+		hoverPanelTmpro.alignment = TextAlignmentOptions.Left;
+		hoverPanelTmpro.overflowMode = TextOverflowModes.Overflow;
+		hoverPanelTmpro.textWrappingMode = TextWrappingModes.NoWrap;
+		var contentSizeFitter = hoverPanelTmpro.gameObject.AddComponent<ContentSizeFitter>();
+		contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+	}
 
-		private Color _noteColor;
-		private HoverHint _noteHoverHint;
-		private HoverHintController _hoverHintController;
-		private TextMeshProUGUI _hoverPanelTmpro;
+	public void SetNoteData(float angle, float offset, Score score, int count) 
+	{
+		noteHoverHint.SetField("_hoverHintController", hoverHintController);
 
-		private float _noteRotation;
-
-		public void Initialize(OrderedNoteCutDirection cutDirection, ColorType colorType, AssetLoader assetLoader) {
-			transform.localScale = Vector3.one * 0.9f;
-
-			_backgroundImage = GetComponent<ImageView>();
-			_directionArrowImage = transform.Find("NoteDirArrow").GetComponent<ImageView>();
-			_cutArrowImage = transform.Find("NoteCutArrow").GetComponent<ImageView>();
-			_cutDistanceImage = transform.Find("NoteCutDistance").GetComponent<ImageView>();
-
-			_cutGroup = new GameObject("NoteCutGroup").transform;
-			_cutGroup.SetParent(_backgroundImage.transform);
-			_cutGroup.localPosition = Vector3.zero;
-			_cutGroup.localScale = Vector3.one;
-			_cutGroup.localRotation = Quaternion.identity;
-			_cutArrowImage.transform.SetParent(_cutGroup);
-			_cutDistanceImage.transform.SetParent(_cutGroup);
-
-			if (colorType == ColorType.ColorA)
-				_noteColor = ColorSchemeManager.GetMainColorScheme().saberAColor;
-			else if (colorType == ColorType.ColorB)
-				_noteColor = ColorSchemeManager.GetMainColorScheme().saberBColor;
-
-			_backgroundImage.color = _noteColor;
-			_cutDistanceImage.color = new Color(0.0f, 1.0f, 0.0f, 0.75f);
-
-			Texture2D square = new Texture2D(2, 2);
-			square.filterMode = FilterMode.Point;
-			square.Apply();
-			_cutDistanceImage.sprite = Sprite.Create(square, new Rect(0, 0, square.width, square.height), new Vector2(0, 0), 100);
-
-			_noteHoverHint = _backgroundImage.gameObject.AddComponent<HoverHint>();
-			_noteHoverHint.text = "";
-
-
-			switch (cutDirection) {
-				case OrderedNoteCutDirection.Down:
-					_noteRotation = 0.0f;
-					break;
-				case OrderedNoteCutDirection.Up:
-					_noteRotation = 180.0f;
-					break;
-				case OrderedNoteCutDirection.Left:
-					_noteRotation = 270.0f;
-					break;
-				case OrderedNoteCutDirection.Right:
-					_noteRotation = 90.0f;
-					break;
-				case OrderedNoteCutDirection.DownLeft:
-					_noteRotation = 315.0f;
-					break;
-				case OrderedNoteCutDirection.DownRight:
-					_noteRotation = 45.0f;
-					break;
-				case OrderedNoteCutDirection.UpLeft:
-					_noteRotation = 225.0f;
-					break;
-				case OrderedNoteCutDirection.UpRight:
-					_noteRotation = 135.0f;
-					break;
-				case OrderedNoteCutDirection.Any:
-					_noteRotation = 0.0f;
-					_directionArrowImage.sprite = assetLoader.NoteDot;
-					break;
+		if (angle == 0f && offset == 0f) 
+		{
+			backgroundImage.color = Color.gray;
+			cutArrowImage.gameObject.SetActive(false);
+			cutDistanceImage.gameObject.SetActive(false);
+			directionArrowImage.color = new(0.8f, 0.8f, 0.8f);
+			noteHoverHint.text = "";
+		} 
+		else 
+		{
+			backgroundImage.color = noteColor;
+			cutArrowImage.gameObject.SetActive(true);
+			cutDistanceImage.gameObject.SetActive(true);
+			cutGroup.transform.localRotation = Quaternion.Euler(new(0f, 0f, angle - noteRotation - 90f));
+			if (Plugin.Settings.TrueCutOffsets) 
+			{
+				cutArrowImage.transform.localPosition = new(offset * 20.0f, 0f, 0f);
+				cutDistanceImage.transform.localScale = new Vector2(-offset * 1.33f, 1.0f);
 			}
-
-			transform.localRotation = Quaternion.Euler(new Vector3(0f, 0f, _noteRotation));
-		}
-
-		public void SetHoverHintController(HoverHintController hoverHintController) {
-			_hoverHintController = hoverHintController;
-			HoverHintPanel hhp = _hoverHintController.GetField<HoverHintPanel, HoverHintController>("_hoverHintPanel");
-			// Skew cringe skew cringe
-			hhp.GetComponent<ImageView>().SetField("_skew", 0.0f);
-			_hoverPanelTmpro = hhp.GetComponentInChildren<TextMeshProUGUI>();
-			_hoverPanelTmpro.fontStyle = FontStyles.Normal;
-			_hoverPanelTmpro.alignment = TextAlignmentOptions.Left;
-			_hoverPanelTmpro.overflowMode = TextOverflowModes.Overflow;
-			_hoverPanelTmpro.enableWordWrapping = false;
-			ContentSizeFitter csf = _hoverPanelTmpro.gameObject.AddComponent<ContentSizeFitter>();
-			csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-		}
-
-		public void SetNoteData(float angle, float offset, Score score, int count) {
-			_noteHoverHint.SetField("_hoverHintController", _hoverHintController);
-
-			if (angle == 0f && offset == 0f) {
-				_backgroundImage.color = Color.gray;
-				_cutArrowImage.gameObject.SetActive(false);
-				_cutDistanceImage.gameObject.SetActive(false);
-				_directionArrowImage.color = new Color(0.8f, 0.8f, 0.8f);
-				_noteHoverHint.text = "";
-			} else {
-				_backgroundImage.color = _noteColor;
-				_cutArrowImage.gameObject.SetActive(true);
-				_cutDistanceImage.gameObject.SetActive(true);
-				_cutGroup.transform.localRotation = Quaternion.Euler(new Vector3(0f, 0f, angle - _noteRotation - 90f));
-				if (Plugin.Settings.TrueCutOffsets) {
-					_cutArrowImage.transform.localPosition = new Vector3(offset * 20.0f, 0f, 0f);
-					_cutDistanceImage.transform.localScale = new Vector2(-offset * 1.33f, 1.0f);
-				} else {
-					_cutArrowImage.transform.localPosition = new Vector3(offset * (30.0f + score.Offset), 0f, 0f);
-					_cutDistanceImage.transform.localScale = new Vector2(-offset * (1.995f + score.Offset*0.0665f), 1.0f);
-				}
-				_directionArrowImage.color = Color.white;
-				string noteNotes = count == 1 ? "note" : "notes";
-				_noteHoverHint.text = "Average score (" + count + " " + noteNotes + ")\n<color=#ff0000>" + String.Format("{0:0.00}", score.TotalScore) + "</color>\n<color=#666666><size=3><line-height=115%>Pre-swing - " + String.Format("{0:0.00}", score.PreSwing) + "\nPost-swing - " + String.Format("{0:0.00}", score.PostSwing) + "\nAccuracy - " + String.Format("{0:0.00}", score.Offset) + "</line-height></size></color>";
+			else 
+			{
+				cutArrowImage.transform.localPosition = new(offset * (30.0f + score.Offset), 0f, 0f);
+				cutDistanceImage.transform.localScale = new Vector2(-offset * (1.995f + score.Offset*0.0665f), 1.0f);
 			}
+			directionArrowImage.color = Color.white;
+			string noteNotes = count == 1 ? "note" : "notes";
+			noteHoverHint.text = "Average score (" + count + " " + noteNotes + ")\n" +
+			                     $"<color=#ff0000>{score.TotalScore:0.00}</color>\n" +
+			                     $"<color=#666666><size=3><line-height=115%>Pre-swing - {score.PreSwing:0.00}\n" +
+			                     $"Post-swing - {score.PostSwing:0.00}\n" +
+			                     $"Accuracy - {score.Offset:0.00}</line-height></size></color>";
 		}
 	}
 }
