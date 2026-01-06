@@ -7,7 +7,7 @@
     <PluginId>SliceDetails</PluginId>
     <PluginName>SliceDetails</PluginName>
     <Authors>ckosmic</Authors>
-    <Version>1.3.6</Version>
+    <Version>1.3.7</Version>
     <GameVersion>1.42.0</GameVersion>
     <Description>View your average cuts per-angle per-grid position in the pause menu and completion screen.</Description>
     <!--<PluginIcon></PluginIcon>-->
